@@ -15,6 +15,8 @@ import { isComment } from "./isComment.ts";
 import { GMFetchNotAvailableError, ResponseError, Result } from "./types.ts";
 declare const scrapbox: Scrapbox;
 
+export type { Mode };
+
 export interface StartTalkInit {
   talkId?: string;
   botIcon?: string;
@@ -261,7 +263,7 @@ export const startTalk = async (
           await sendAndWrite(button);
         },
       })),
-      Exit
+      Exit,
     );
     open();
   };
