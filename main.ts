@@ -1,4 +1,4 @@
-import { ask } from "./ask.ts";
+import { Answer, ask } from "./ask.ts";
 import { createPopupMenuBar } from "./popupBar.ts";
 import { insertText, Scrapbox, takeStores } from "./deps/scrapbox-dom.ts";
 import {
@@ -11,6 +11,8 @@ import { makeShareURL } from "./makeShareURL.ts";
 import { questionToScrapbox } from "./questionToScrapbox.ts";
 import { writeAfter } from "./writeAfter.ts";
 import { makePlain } from "./makePlain.ts";
+import { isComment } from "./isComment.ts";
+import { GMFetchNotAvailableError, ResponseError, Result } from "./types.ts";
 declare const scrapbox: Scrapbox;
 
 export interface StartTalkInit {
@@ -132,16 +134,56 @@ export const startTalk = async (
     return result;
   };
 
+  /** 前回送信した回答がコメントのみの場合は、重複送信を防ぐためそれを覚えておく */
+  let commentLastSent = "";
   const sendMultiple = async (answer: string) => {
-    const lines = makePlain(answer).split("\n").map((line) => line.trim());
+    let plain = makePlain(answer)
+      // 空白と空行を削除する
+      .split("\n").map((line) => line.trim()).join("\n").trim();
+    // 送信済みのcommentsを削除
+    if (plain.startsWith(commentLastSent)) {
+      plain = plain.slice(commentLastSent.length);
+    }
+
+    const lines = plain.split("\n");
     if (lines.length === 0) return;
-    if (lines.length === 1) return await send(lines[0]);
+    if (lines.every((line) => isComment(line))) {
+      commentLastSent = plain;
+    }
+
+    // 全てコメントか、1行だけ回答がある場合は、そのまま送信する
+    const answerLines = lines.filter((line) => !isComment(line));
+    if (answerLines.length < 2) {
+      let question:
+        | Result<Answer, ResponseError | GMFetchNotAvailableError>
+        | undefined;
+      let result: Result<Answer, ResponseError | GMFetchNotAvailableError>;
+      for (const line of lines) {
+        result = await send(line);
+        if (!result.ok) return result;
+        if (!isComment(line)) question = result;
+      }
+      return question ?? result!;
+    }
+
+    // 回答が2行以上ある場合は相槌モードを使う
+    let index = 0;
+    {
+      let result: Result<Answer, ResponseError | GMFetchNotAvailableError>;
+      // 先頭のcommentsはそのまま送信する
+      for (; index < lines.length; index++) {
+        if (!isComment(lines[index])) break;
+        result = await send(lines[index]);
+        if (!result.ok) return result;
+      }
+    }
     {
       const result = await send("まず聞いて");
       if (!result.ok) return result;
     }
-    for (const line of lines) {
-      const result = await send(line);
+    for (; index < lines.length; index++) {
+      if (isComment(lines[index])) break;
+      const result = await send(lines[index]);
       if (!result.ok) return result;
     }
     return await send("おしまい");
