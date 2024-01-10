@@ -261,10 +261,7 @@ export const startTalk = async (
           await sendAndWrite(button);
         },
       })),
-      {
-        text: "Exit",
-        onClick: () => close(),
-      },
+      Exit
     );
     open();
   };
