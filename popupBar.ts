@@ -23,13 +23,15 @@ export const createPopupMenuBar = () => {
 
   const cursor = takeCursor();
   const callback = () => {
-    const cursorDOM = document.getElementsByClassName(
-      "cursor",
-    )[0] as HTMLElement;
-    popupMenu.style.top = `${
-      parseInt(cursorDOM.style.top) +
-      parseInt(cursorDOM.style.height) + 4
-    }px`;
+    requestAnimationFrame(() => {
+      const cursorDOM = document.getElementsByClassName(
+        "cursor",
+      )[0] as HTMLElement;
+      popupMenu.style.top = `${
+        parseInt(cursorDOM.style.top) +
+        parseInt(cursorDOM.style.height) + 4
+      }px`;
+    });
   };
   cursor.addChangeListener(callback);
 
