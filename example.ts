@@ -1,5 +1,5 @@
 import { Scrapbox, textInput } from "./deps/scrapbox-dom.ts";
-import { startTalk } from "./main.ts";
+import { startTalk } from "./mod.ts";
 declare const scrapbox: Scrapbox;
 
 scrapbox.PopupMenu.addButton({
