@@ -22,7 +22,7 @@ export const createPopupMenuBar = () => {
   editor()?.append?.(popupMenu);
 
   const cursor = takeCursor();
-  cursor.addChangeListener(() => {
+  const callback = () => {
     const cursorDOM = document.getElementsByClassName(
       "cursor",
     )[0] as HTMLElement;
@@ -30,7 +30,8 @@ export const createPopupMenuBar = () => {
       parseInt(cursorDOM.style.top) +
       parseInt(cursorDOM.style.height) + 4
     }px`;
-  });
+  };
+  cursor.addChangeListener(callback);
 
   return {
     render,
@@ -38,7 +39,10 @@ export const createPopupMenuBar = () => {
     open: () => popupMenu.hidden = false,
     close: () => popupMenu.hidden = true,
     toggle: () => popupMenu.hidden = !popupMenu.hidden,
-    dispose: () => popupMenu.remove(),
+    dispose: () => {
+      popupMenu.remove();
+      cursor.removeChangeListener(callback);
+    },
   };
 };
 
