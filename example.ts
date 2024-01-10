@@ -9,8 +9,8 @@ scrapbox.PopupMenu.addButton({
 
     startTalk().then((result) => {
       if (!result) return;
-      const { ask, visible } = result;
-      textInput()!.addEventListener("keydown", (e) => {
+      const { ask, visible, onExit } = result;
+      const handleKeydown = (e: KeyboardEvent) => {
         if (
           !visible() || e.key !== "Enter" || !e.ctrlKey || e.altKey ||
           e.shiftKey
@@ -19,7 +19,9 @@ scrapbox.PopupMenu.addButton({
         e.preventDefault();
         e.stopPropagation();
         ask();
-      });
+      };
+      textInput()!.addEventListener("keydown", handleKeydown);
+      onExit(() => textInput()!.removeEventListener("keydown", handleKeydown));
     });
   },
 });

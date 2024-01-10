@@ -28,6 +28,7 @@ export interface StartTalkResult {
   close: () => void;
   visible: () => boolean;
   exit: () => void;
+  onExit: (listener: () => void) => void;
 }
 
 export const startTalk = async (
@@ -46,9 +47,16 @@ export const startTalk = async (
   const { render, visible, open, close, dispose } = createPopupMenuBar();
   close();
 
+  const listeners = new Set<() => void>();
+  const exit = () => {
+    dispose();
+    for (const listener of listeners) listener();
+  };
+  const onExit = (listener: () => void) => listeners.add(listener);
+
   const Exit = {
     text: "Exit",
-    onClick: dispose,
+    onClick: exit,
   };
 
   let talkId_ = init?.talkId || findTalkId(initialText) ||
@@ -253,10 +261,7 @@ export const startTalk = async (
           await sendAndWrite(button);
         },
       })),
-      {
-        text: "Exit",
-        onClick: () => close(),
-      },
+      Exit
     );
     open();
   };
@@ -295,7 +300,7 @@ export const startTalk = async (
   }
   await sendAndWrite(initialText);
 
-  return { ask: ask_, open, close, visible, exit: close };
+  return { ask: ask_, open, close, visible, exit, onExit };
 };
 
 /**
